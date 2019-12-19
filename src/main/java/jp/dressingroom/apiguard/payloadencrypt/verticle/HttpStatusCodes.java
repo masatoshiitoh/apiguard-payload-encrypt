@@ -1,4 +1,4 @@
-package jp.dressingroom.gameserver.apiguard.verticle;
+package jp.dressingroom.apiguard.payloadencrypt.verticle;
 
 public enum HttpStatusCodes {
   OK(200),
