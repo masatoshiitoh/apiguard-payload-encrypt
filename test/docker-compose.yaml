@@ -9,6 +9,21 @@ services:
     environment:
       server.port: 8888
 
+  apiguardpayloadencrypt:
+    build: ..
+    ports:
+      - '8889:8889'
+    expose:
+      - 8889
+    environment:
+      payloadencrypt.server.port: 8889
+      payloadencrypt.proxy.hostname: localhost
+      payloadencrypt.proxy.port: 8888
+      payloadencrypt.proxy.ua: Apiguard Payloadencrypt/1.0/test
+      payload.proxy.usessl: 'false'
+      payloadencrypt.iv.base64: MDEyMzQ1Njc4OWFiY2RlZg==
+      payloadencrypt.psk.base64: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
 #  gameserver:
 #    build: .
 #    depends_on:
