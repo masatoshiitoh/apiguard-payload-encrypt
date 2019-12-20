@@ -1,0 +1,37 @@
+version: '2'
+services:
+  httpresponder:
+    build: http-responder
+    ports: # map ports to host network.
+      - '8888:8888'
+    expose: # open to composed services
+      - 8888
+    environment:
+      server.port: 8888
+
+#  gameserver:
+#    build: .
+#    depends_on:
+#      - db
+#      - redis
+#    ports: # map ports to host network.
+#      - '8083:8083'
+#    expose: # open to composed services
+#      - 8083
+#    environment:
+#      DB_HOST: db
+#      DB_PORT: 3306
+#      DB_USER: root
+#      DB_PASSWORD: password
+#      DB_NAME: app
+#      REDIS_HOST: redis
+#      REDIS_PORT: 6379
+#
+#  gameclientspa:
+#    build: gameclientspa
+#    ports: # map ports to host network.
+#      - '3030:3030'
+#    depends_on:
+#      - gameserver
+#    environment:
+#      NUXT_ENV_API_BASEURL: 'http://gameserver:8083'
