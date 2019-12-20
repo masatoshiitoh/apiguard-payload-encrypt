@@ -108,10 +108,12 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                   //proxyResponse.end(Buffer.buffer(encryptedBase64Message.getValue()));
                   proxyResponse.end(encryptedBase64Message.getValue());
                 } else {
+                  System.out.println("at 1");
                   sendResponse(routingContext, HttpStatusCodes.INTERNAL_SERVER_ERROR);
                 }
               });
             } else {
+              System.out.println("at 2");
               sendResponse(routingContext, HttpStatusCodes.INTERNAL_SERVER_ERROR);
             }
           } catch (Exception e) {

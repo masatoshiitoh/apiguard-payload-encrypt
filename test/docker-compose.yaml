@@ -17,7 +17,7 @@ services:
       - 8889
     environment:
       payloadencrypt.server.port: 8889
-      payloadencrypt.proxy.hostname: localhost
+      payloadencrypt.proxy.hostname: httpresponder
       payloadencrypt.proxy.port: 8888
       payloadencrypt.proxy.ua: Apiguard Payloadencrypt/1.0/test
       payload.proxy.usessl: 'false'

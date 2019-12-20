@@ -41,8 +41,8 @@ public class CryptoVerticle extends AbstractVerticle {
 
         // setup cipher parameters.
         JsonObject result = json.result();
-        String base64Iv = result.getString(ConfigKeyNames.CRYPTO_IV_BASE64.value());
-        String base64Psk = result.getString(ConfigKeyNames.CRYPTO_PSK_BASE64.value());
+        String base64Iv = result.getString(ConfigKeyNames.CRYPTO_IV_BASE64.value(), "MDAwMDAwMDAwMDAwMDAwMA=="); // default value is 0000000000000000
+        String base64Psk = result.getString(ConfigKeyNames.CRYPTO_PSK_BASE64.value(), "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA"); // default value is 00000000000000000000000000000000
 
         Base64.Decoder decoder = Base64.getDecoder();
         IvParameterSpec iv = new IvParameterSpec(decoder.decode(base64Iv));
