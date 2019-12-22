@@ -138,94 +138,54 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
     // 4. encrypt response
     // 5. return encrypted payload to caller.
     //
-    return routingContext -> {
-      routingContext.request().bodyHandler(a -> {
-//        System.out.println("p0");
-//
-//        EventBus eventBus = vertx.eventBus();
-//
-//        // 1. receive payload
-//        // request body contains base64 encoded encrypted payload.
-//        System.out.println("p0-01");
-//        Base64Message encryptedPayload = new Base64Message(routingContext.getBody().getBytes());
-//
-//        System.out.println("p0end");
-//        // 2. decrypt 1's payload
-//        eventBus.request(ApiguardEventBusNames.DECRYPT.value(), encryptedPayload, decrypt -> {
-//          System.out.println("p00");
-//          if (decrypt.succeeded()) {
-//            System.out.println("ok0");
-//            Base64Message decrypted = (Base64Message) decrypt.result().body();
-//            Buffer buf = Buffer.buffer(decrypted.decode());
-//
-//            // now, buf contains 1's decrypted payload.
-//
-//            HttpMethod method = routingContext.request().method();
-//            RequestOptions requestOptions = copyFromRequest(routingContext);
-//
-//            client
-//              .request(method, requestOptions).ssl(false).sendBuffer(buf,
-//              ar -> {
-//                try {
-//                  if (ar.succeeded()) {
-//                    System.out.println("ok1");
-//                    HttpResponse<Buffer> response = ar.result();
-//                    HttpServerResponse proxyResponse = routingContext.response();
-//
-//                    Base64Message plainResponseBody = new Base64Message(response.body().getBytes());
-//
-//                    eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), plainResponseBody, encrypt -> {
-//                      System.out.println("ok2");
-//                      if (encrypt.succeeded()) {
-//                        System.out.println("ok3");
-//                        Base64Message encryptedBase64Message = (Base64Message) encrypt.result().body();
-//                        proxyResponse.end(Buffer.buffer(encryptedBase64Message.getValue()));
-//                      } else {
-//                        System.out.println("p1");
-//                        sendResponse(routingContext, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-//                      }
-//                    });
-//                  } else {
-//                    System.out.println("p2");
-//                    sendResponse(routingContext, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-//                  }
-//                } catch (Exception e) {
-//                  e.printStackTrace();
-//                  routingContext.fail(e);
-//                }
-//              }
-//            );
-//
-//          } else {
-//            System.out.println("p3");
-//            sendResponse(routingContext, HttpStatusCodes.INTERNAL_SERVER_ERROR);
-//          }
-//
-//        });
-//
+    return requestorContext -> {
+      requestorContext.request().bodyHandler(body -> {
 
+        HttpMethod method = requestorContext.request().method();
+        RequestOptions requestOptions = copyFromRequest(requestorContext);
+
+        System.out.println("decryptor: request received as:" + body.toString());
+
+        EventBus eventBus = vertx.eventBus();
+        eventBus.request(ApiguardEventBusNames.DECRYPT.value(), Base64.getDecoder().decode(body.getBytes()) , decodeReplyHandler -> {
+          if (decodeReplyHandler.succeeded()) {
+            byte[] decrypted = (byte[])decodeReplyHandler.result().body();
+
+            client
+              .request(method, requestOptions).ssl(requestOptions.isSsl()).sendBuffer(Buffer.buffer(decrypted),
+              originRequest -> {
+                try {
+                  if (originRequest.succeeded()) {
+                    HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                    HttpServerResponse responseToRequestor = requestorContext.response();
+
+                    // TEMP: once, forget headers.
+                    // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
+
+                    byte[] beforeEncrypt = originRequest.result().body().getBytes();
+
+                    eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
+                      if (encrypt.succeeded()) {
+                        byte[] encryptedMessage = (byte[])encrypt.result().body();
+                        responseToRequestor.end(Base64.getEncoder().encodeToString( encryptedMessage));
+                      } else {
+                        sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
+                      }
+                    });
+                  } else {
+                    sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Origin request failed.");
+                  }
+                } catch (Exception e) {
+                  e.printStackTrace();
+                  requestorContext.fail(e);
+                }
+              }
+            );
+          } else {
+            sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "request payload decrypt failed.");
+          }
+        });
       });
-/*
-      routingContext.request().bodyHandler(bodiedProxyHandler -> {
-          sendResponse(routingContext, HttpStatusCodes.OK, "called bodied with " + routingContext.request().method().name());
-        }
-      );
-*/
-/*
-      routingContext.request().bodyHandler(bodyHandler -> {
-        byte[] body = bodyHandler.getBytes();
-        String id = routingContext.request().getParam("id");
-
-        System.out.println("posted id: " + id + " body: " + new String(body));
-
-        // build response body
-        HttpServerResponse response = routingContext.response();
-        response.putHeader("content-type", "text/plain");
-        // Write to the response and end it
-        response.end("postApiRoutingHandler received: " + new String(body));
-        return;
-      });
-*/
     };
   }
 
