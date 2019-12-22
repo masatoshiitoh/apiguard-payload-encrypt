@@ -21,7 +21,7 @@ $decrypted = openssl_decrypt($encrypted, 'aes-256-cbc', $key, 0, $iv);
 $encrypted = file_get_contents("/users/b-itoh/Downloads/000000");
 $decrypted = openssl_decrypt($encrypted, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
 
-$encrypted = 'M9U000xcrZVRYr5duS/cuxp+ESwy0Ri5d620hV+9PaxqCWcE0fgTMlJbpHeZP12W4B6z/PGr4E/whPdNSGs++QIrrthzpd4zurDI1D0SsSF5qdSRb8G9AqTLYD24g3MeMyvFFJD+pwEO+Xogw0vsfGSXINCum3d/QocpescItC87xM5Ah4O0aIYoJaHG0ngBy+1SRLJhMoUG+YGhwp/V9xKHB+aBjfi95Jd9PWvKaLs=';
+$encrypted = 'NovdGON73TfXGIEY6h2GwQ==';
 echo "\r\nEncrypted:\r\n";
 print_r($encrypted);
 $decrypted = openssl_decrypt($encrypted, 'aes-256-cbc', $key, 0, $iv);

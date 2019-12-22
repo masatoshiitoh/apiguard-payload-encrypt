@@ -8,8 +8,6 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import jp.dressingroom.apiguard.payloadencrypt.ConfigKeyNames;
-import jp.dressingroom.apiguard.payloadencrypt.entity.Base64Message;
-import jp.dressingroom.apiguard.payloadencrypt.entity.Base64MessageCodec;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -37,7 +35,7 @@ public class CryptoVerticle extends AbstractVerticle {
         EventBus eventBus = vertx.eventBus();
         eventBus.consumer(ApiguardEventBusNames.ENCRYPT.value(), encryptMessageHandler());
         eventBus.consumer(ApiguardEventBusNames.DECRYPT.value(), decryptMessageHandler());
-        eventBus.registerDefaultCodec(Base64Message.class, new Base64MessageCodec());
+        // eventBus.registerDefaultCodec(Base64Message.class, new Base64MessageCodec());
 
         // setup cipher parameters.
         JsonObject result = json.result();
@@ -59,7 +57,7 @@ public class CryptoVerticle extends AbstractVerticle {
     }));
   }
 
-  private Handler<Message<Base64Message>> decryptMessageHandler() {
+  private Handler<Message<byte[]>> decryptMessageHandler() {
     // this is decrypter
     return messageHandler -> {
       // System.out.println(messageHandler.body().getValue());
@@ -67,7 +65,7 @@ public class CryptoVerticle extends AbstractVerticle {
     };
   }
 
-  private Handler<Message<Base64Message>> encryptMessageHandler() {
+  private Handler<Message<byte[]>> encryptMessageHandler() {
     // this is encrypter
     return messageHandler -> {
       // System.out.println(messageHandler.body().getValue());
@@ -75,10 +73,10 @@ public class CryptoVerticle extends AbstractVerticle {
     };
   }
 
-  private void cryptWork(Cipher cipher, Base64Message base64Message, Message<Base64Message> messageHandler) {
+  private void cryptWork(Cipher cipher, byte[] input, Message<byte[]> messageHandler) {
     try {
-      byte[] rb = cipher.doFinal(base64Message.decode());
-      messageHandler.reply(new Base64Message(rb));
+      byte[] rb = cipher.doFinal(input);
+      messageHandler.reply(rb);
     } catch (IllegalBlockSizeException e) {
       e.printStackTrace();
       messageHandler.fail(1,"IllegalBlockSizeException");
