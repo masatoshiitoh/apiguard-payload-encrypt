@@ -98,27 +98,42 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
       client
         .request(method, requestOptions).ssl(requestOptions.isSsl()).send(
         originRequest -> {
+
+          System.out.println("bodyLessProxyHandler: ");
+          System.out.println("succeeded: " + (originRequest.succeeded() ? "true" : "false"));
+          System.out.println("status code: " + originRequest.result().statusCode());
+
           try {
             if (originRequest.succeeded()) {
-              HttpResponse<Buffer> responseFromOrigin = originRequest.result();
               HttpServerResponse responseToRequestor = requestorContext.response();
 
               // TEMP: once, forget headers.
               // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
 
-              EventBus eventBus = vertx.eventBus();
-              byte[] beforeEncrypt = originRequest.result().body().getBytes();
+              if (originRequest.result().body() != null) {
+                EventBus eventBus = vertx.eventBus();
+                byte[] beforeEncrypt = originRequest.result().body().getBytes();
 
-              eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
-                if (encrypt.succeeded()) {
-                  byte[] encryptedMessage = (byte[])encrypt.result().body();
-                  responseToRequestor.end(Base64.getEncoder().encodeToString( encryptedMessage));
-                } else {
-                  sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
-                }
-              });
+                eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
+                  if (encrypt.succeeded()) {
+                    byte[] encryptedMessage = (byte[]) encrypt.result().body();
+                    responseToRequestor
+                      .setStatusCode(originRequest.result().statusCode())
+                      .end(Base64.getEncoder().encodeToString(encryptedMessage));
+                  } else {
+                    sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
+                  }
+                });
+              } else {
+                requestorContext.response()
+                  .setStatusCode(originRequest.result().statusCode())
+                  .end();
+              }
             } else {
-              sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Origin request failed.");
+              System.out.println("0002: ");
+              requestorContext.response()
+                .setStatusCode(originRequest.result().statusCode())
+                .end("Origin request failed.");
             }
           } catch (Exception e) {
             e.printStackTrace();
@@ -144,7 +159,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         HttpMethod method = requestorContext.request().method();
         RequestOptions requestOptions = copyFromRequest(requestorContext);
 
-        System.out.println("decryptor: request received as:" + body.toString());
+        System.out.println("bodiedProxyHandler decryptor: request received as:" + body.toString());
 
         EventBus eventBus = vertx.eventBus();
         eventBus.request(ApiguardEventBusNames.DECRYPT.value(), Base64.getDecoder().decode(body.getBytes()) , decodeReplyHandler -> {
@@ -156,26 +171,36 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
               originRequest -> {
                 try {
                   if (originRequest.succeeded()) {
-                    HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                    HttpServerResponse responseToRequestor = requestorContext.response();
+                    if (originRequest.result().body() != null ) {
+                      HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                      HttpServerResponse responseToRequestor = requestorContext.response();
 
-                    // TEMP: once, forget headers.
-                    // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
+                      // TEMP: once, forget headers.
+                      // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
 
-                    byte[] beforeEncrypt = originRequest.result().body().getBytes();
+                      byte[] beforeEncrypt = originRequest.result().body().getBytes();
 
-                    eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
-                      if (encrypt.succeeded()) {
-                        byte[] encryptedMessage = (byte[])encrypt.result().body();
-                        responseToRequestor.end(Base64.getEncoder().encodeToString( encryptedMessage));
-                      } else {
-                        sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
-                      }
-                    });
+                      eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
+                        if (encrypt.succeeded()) {
+                          byte[] encryptedMessage = (byte[]) encrypt.result().body();
+                          responseToRequestor.end(Base64.getEncoder().encodeToString(encryptedMessage));
+                        } else {
+                          sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
+                        }
+                      });
+                    } else {
+                      requestorContext.response()
+                        .setStatusCode(originRequest.result().statusCode())
+                        .end();
+
+                    }
                   } else {
                     sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Origin request failed.");
                   }
                 } catch (Exception e) {
+                  requestorContext.response()
+                    .setStatusCode(originRequest.result().statusCode())
+                    .end();
                   e.printStackTrace();
                   requestorContext.fail(e);
                 }
@@ -213,4 +238,5 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
       response.end(message);
     }
   }
+
 }

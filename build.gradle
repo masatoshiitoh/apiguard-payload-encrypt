@@ -9,6 +9,7 @@ version = '1.0.0-SNAPSHOT'
 
 repositories {
   mavenCentral()
+  maven {url 'https://github.com/masatoshiitoh/http-responder/raw/master/' }
 }
 
 ext {
@@ -38,8 +39,10 @@ dependencies {
   compile "io.vertx:vertx-config:$vertxVersion"
 
   testImplementation "io.vertx:vertx-junit5:$vertxVersion"
+  testImplementation "io.vertx:vertx-unit:$vertxVersion"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
   testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"
+  testImplementation 'jp.dressingroom.apiguard:Mavenrepobygradle:1.0.0-SNAPSHOT'
 }
 
 

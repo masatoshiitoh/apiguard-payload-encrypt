@@ -1,5 +1,7 @@
 package jp.dressingroom.apiguard.payloadencrypt.verticle;
 
+import java.util.Arrays;
+
 public enum HttpStatusCodes {
   OK(200),
   NOT_FOUND(404),
@@ -7,6 +9,11 @@ public enum HttpStatusCodes {
   ;
 
   private final Integer status;
+
+  static HttpStatusCodes getHttpStatusCode(Integer status) {
+    HttpStatusCodes result = Arrays.stream(HttpStatusCodes.values()).filter(s -> s.value() == status).findAny().orElse(null);
+    return result;
+  }
 
   HttpStatusCodes(final Integer status) {
     this.status = status;
