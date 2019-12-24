@@ -155,61 +155,63 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
     //
     return requestorContext -> {
       requestorContext.request().bodyHandler(body -> {
-
         HttpMethod method = requestorContext.request().method();
         RequestOptions requestOptions = copyFromRequest(requestorContext);
-
-        System.out.println("bodiedProxyHandler decryptor: request received as:" + body.toString());
-
+        // System.out.println("bodiedProxyHandler decryptor: request received as:" + body.toString());
         EventBus eventBus = vertx.eventBus();
-        eventBus.request(ApiguardEventBusNames.DECRYPT.value(), Base64.getDecoder().decode(body.getBytes()) , decodeReplyHandler -> {
-          if (decodeReplyHandler.succeeded()) {
-            byte[] decrypted = (byte[])decodeReplyHandler.result().body();
+        try {
+          byte[] decoded = Base64.getDecoder().decode(body.getBytes());
+          eventBus.request(ApiguardEventBusNames.DECRYPT.value(), decoded , decodeReplyHandler -> {
+            if (decodeReplyHandler.succeeded()) {
+              byte[] decrypted = (byte[])decodeReplyHandler.result().body();
 
-            client
-              .request(method, requestOptions).ssl(requestOptions.isSsl()).sendBuffer(Buffer.buffer(decrypted),
-              originRequest -> {
-                try {
-                  if (originRequest.succeeded()) {
-                    if (originRequest.result().body() != null ) {
-                      HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                      HttpServerResponse responseToRequestor = requestorContext.response();
+              client
+                .request(method, requestOptions).ssl(requestOptions.isSsl()).sendBuffer(Buffer.buffer(decrypted),
+                originRequest -> {
+                  try {
+                    if (originRequest.succeeded()) {
+                      if (originRequest.result().body() != null ) {
+                        HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                        HttpServerResponse responseToRequestor = requestorContext.response();
 
-                      // TEMP: once, forget headers.
-                      // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
+                        // TEMP: once, forget headers.
+                        // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
 
-                      byte[] beforeEncrypt = originRequest.result().body().getBytes();
+                        byte[] beforeEncrypt = originRequest.result().body().getBytes();
 
-                      eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
-                        if (encrypt.succeeded()) {
-                          byte[] encryptedMessage = (byte[]) encrypt.result().body();
-                          responseToRequestor.end(Base64.getEncoder().encodeToString(encryptedMessage));
-                        } else {
-                          sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
-                        }
-                      });
+                        eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
+                          if (encrypt.succeeded()) {
+                            byte[] encryptedMessage = (byte[]) encrypt.result().body();
+                            responseToRequestor.end(Base64.getEncoder().encodeToString(encryptedMessage));
+                          } else {
+                            sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
+                          }
+                        });
+                      } else {
+                        requestorContext.response()
+                          .setStatusCode(originRequest.result().statusCode())
+                          .end();
+                      }
                     } else {
-                      requestorContext.response()
-                        .setStatusCode(originRequest.result().statusCode())
-                        .end();
-
+                      sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Origin request failed.");
                     }
-                  } else {
-                    sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Origin request failed.");
+                  } catch (Exception e) {
+                    requestorContext.response()
+                      .setStatusCode(originRequest.result().statusCode())
+                      .end();
+                    e.printStackTrace();
+                    requestorContext.fail(e);
                   }
-                } catch (Exception e) {
-                  requestorContext.response()
-                    .setStatusCode(originRequest.result().statusCode())
-                    .end();
-                  e.printStackTrace();
-                  requestorContext.fail(e);
                 }
-              }
-            );
-          } else {
-            sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "request payload decrypt failed.");
-          }
-        });
+              );
+            } else {
+              sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "request payload decrypt failed.");
+            }
+          });
+        } catch (IllegalArgumentException e) {
+          // base64 decode failed.
+          sendResponse(requestorContext, HttpStatusCodes.BAD_REQUEST, "Payload decrypt failed.");
+        }
       });
     };
   }

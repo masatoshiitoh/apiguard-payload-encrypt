@@ -129,5 +129,16 @@ public class TestMainVerticle {
           testContext.completeNow();
         })));
   }
+  @Test
+  void payloadEncryptPostNotCrypted(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
 
+    client.post(18889, "localhost", "/")
+      .as(BodyCodec.string())
+      .sendBuffer(Buffer.buffer("plain text"),
+        testContext.succeeding(response -> testContext.verify(() -> {
+          assertTrue(response.statusCode() == 400);
+          testContext.completeNow();
+        })));
+  }
 }
