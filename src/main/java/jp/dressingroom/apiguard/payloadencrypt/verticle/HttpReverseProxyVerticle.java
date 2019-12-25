@@ -99,9 +99,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         .request(method, requestOptions).ssl(requestOptions.isSsl()).send(
         originRequest -> {
 
-          System.out.println("bodyLessProxyHandler: ");
-          System.out.println("succeeded: " + (originRequest.succeeded() ? "true" : "false"));
-          System.out.println("status code: " + originRequest.result().statusCode());
+//          System.out.println("bodyLessProxyHandler: ");
+//          System.out.println("succeeded: " + (originRequest.succeeded() ? "true" : "false"));
+//          System.out.println("status code: " + originRequest.result().statusCode());
 
           try {
             if (originRequest.succeeded()) {
