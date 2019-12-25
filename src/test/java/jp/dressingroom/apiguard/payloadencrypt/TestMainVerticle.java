@@ -2,6 +2,7 @@ package jp.dressingroom.apiguard.payloadencrypt;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.junit5.VertxExtension;
@@ -22,8 +23,8 @@ public class TestMainVerticle {
     System.setProperty("server.port","18888");
     System.setProperty("payloadencrypt.server.port","18889");
     System.setProperty("payloadencrypt.proxy.port","18888");
-    System.setProperty("payloadencrypt.iv.base64","MDEyMzQ1Njc4OWFiY2RlZg==");
-    System.setProperty("payloadencrypt.psk.base64","MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=");
+    System.setProperty("payloadencrypt.iv.base64","MDEyMzQ1Njc4OWFiY2RlZg=="); // original string: 0123456789abcdef
+    System.setProperty("payloadencrypt.psk.base64","MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="); // original string: 0123456789abcdef0123456789abcdef
 
     vertx.deployVerticle(new HttpResponderMainVerticle(), testContext.succeeding(id->testContext.completeNow()));
     vertx.deployVerticle(new MainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
@@ -141,4 +142,53 @@ public class TestMainVerticle {
           testContext.completeNow();
         })));
   }
+
+  @Test
+  void httpResponderOptionSomePathResponse(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+    client.request(HttpMethod.OPTIONS, 18889, "localhost", "/test/path")
+      .as(BodyCodec.string())
+      .send(
+        testContext.succeeding(response -> testContext.verify(() -> {
+          assertTrue(response.statusCode() == 200);
+          testContext.completeNow();
+        })));
+  }
+  @Test
+  void httpResponderOption400Response(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.request(HttpMethod.OPTIONS, 18889, "localhost", "/400")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 400);
+        testContext.completeNow();
+      })));
+  }
+  @Test
+  void httpResponderOption404Response(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.request(HttpMethod.OPTIONS, 18889, "localhost", "/404")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 404);
+        testContext.completeNow();
+      })));
+  }
+  @Test
+  void httpResponderOption500Response(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.request(HttpMethod.OPTIONS, 18889, "localhost", "/500")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 500);
+        testContext.completeNow();
+      })));
+  }
+
+
+
+
 }
