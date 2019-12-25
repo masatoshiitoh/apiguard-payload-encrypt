@@ -97,42 +97,55 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
       client
         .request(method, requestOptions).ssl(requestOptions.isSsl()).send(
-        originRequest -> {
-
-//          System.out.println("bodyLessProxyHandler: ");
-//          System.out.println("succeeded: " + (originRequest.succeeded() ? "true" : "false"));
-//          System.out.println("status code: " + originRequest.result().statusCode());
+        originResponse -> {
 
           try {
-            if (originRequest.succeeded()) {
-              HttpServerResponse responseToRequestor = requestorContext.response();
+            HttpServerResponse responseToRequestor = requestorContext.response();
+            if (originResponse.succeeded()) {
 
-              // TEMP: once, forget headers.
-              // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
+              // Copy headers
+              responseToRequestor.headers().setAll(originResponse.result().headers());
 
-              if (originRequest.result().body() != null) {
+              if (originResponse.result().body() != null) {
+                // オリジンからボディが返されてきた場合
+
+
+                // 暗号化対象バイト列の取得
+                byte[] plainResponseBody = originResponse.result().body().getBytes();
+
+                // 暗号化するぜ
                 EventBus eventBus = vertx.eventBus();
-                byte[] beforeEncrypt = originRequest.result().body().getBytes();
+                eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), plainResponseBody, encrypt -> {
 
-                eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), beforeEncrypt, encrypt -> {
                   if (encrypt.succeeded()) {
-                    byte[] encryptedMessage = (byte[]) encrypt.result().body();
+                    // 暗号化成功
+                    byte[] encryptedBytes = (byte[]) encrypt.result().body();
+
+                    // ヘッダをコピー
+                    responseToRequestor.headers().setAll(
+                      originResponse.result().headers().remove("content-length")
+                    );
+
                     responseToRequestor
-                      .setStatusCode(originRequest.result().statusCode())
-                      .end(Base64.getEncoder().encodeToString(encryptedMessage));
+                      .setStatusCode(originResponse.result().statusCode())
+                      .end(Base64.getEncoder().encodeToString(encryptedBytes)); // << HERE
                   } else {
-                    sendResponse(requestorContext, HttpStatusCodes.INTERNAL_SERVER_ERROR, "Encrypt failed.");
+                    responseToRequestor.headers().setAll(originResponse.result().headers());
+                    responseToRequestor
+                      .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
+                      .end("Encrypt failed.");
                   }
                 });
               } else {
-                requestorContext.response()
-                  .setStatusCode(originRequest.result().statusCode())
+                responseToRequestor.headers().setAll(originResponse.result().headers());
+                responseToRequestor
+                  .setStatusCode(originResponse.result().statusCode())
                   .end();
               }
             } else {
               System.out.println("0002: ");
               requestorContext.response()
-                .setStatusCode(originRequest.result().statusCode())
+                .setStatusCode(originResponse.result().statusCode())
                 .end("Origin request failed.");
             }
           } catch (Exception e) {
@@ -170,12 +183,14 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                 originRequest -> {
                   try {
                     if (originRequest.succeeded()) {
+                      HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                      HttpServerResponse responseToRequestor = requestorContext.response();
                       if (originRequest.result().body() != null ) {
-                        HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                        HttpServerResponse responseToRequestor = requestorContext.response();
 
-                        // TEMP: once, forget headers.
-                        // responseFromOrigin.headers().entries().forEach(s -> responseToRequestor.headers().add(s.getKey(), s.getValue()));
+                        // ヘッダをコピー
+                        responseToRequestor.headers().setAll(
+                          responseFromOrigin.headers().remove("content-length")
+                        );
 
                         byte[] beforeEncrypt = originRequest.result().body().getBytes();
 
@@ -188,7 +203,8 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                           }
                         });
                       } else {
-                        requestorContext.response()
+                        responseToRequestor.headers().setAll(responseFromOrigin.headers());
+                        responseToRequestor
                           .setStatusCode(originRequest.result().statusCode())
                           .end();
                       }

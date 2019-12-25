@@ -43,6 +43,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.body().equals("Hello"));
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -55,6 +57,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 200);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -66,7 +70,10 @@ public class TestMainVerticle {
     client.get(18889, "localhost", "/hello")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
-        assertTrue(response.body().equals("NovdGON73TfXGIEY6h2GwQ==")); // this Base64 encoded string is "Hello".
+
+        assertTrue(response.body().equals("NovdGON73TfXGIEY6h2GwQ==")); // this Base64 encoded string is "Hello".  // <- HERE
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -79,6 +86,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 404);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -91,6 +100,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 404);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -103,6 +114,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 500);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -115,6 +128,8 @@ public class TestMainVerticle {
       .sendBuffer(Buffer.buffer("NovdGON73TfXGIEY6h2GwQ=="),
         testContext.succeeding(response -> testContext.verify(() -> {
           assertTrue(response.statusCode() == 404);
+          assertTrue(response.headers().contains("httpresponder"));
+          assertTrue(response.headers().get("httpresponder").equals("true"));
           testContext.completeNow();
         })));
   }
@@ -127,6 +142,8 @@ public class TestMainVerticle {
       .sendBuffer(Buffer.buffer("NovdGON73TfXGIEY6h2GwQ=="),
         testContext.succeeding(response -> testContext.verify(() -> {
           assertTrue(response.statusCode() == 500);
+          assertTrue(response.headers().contains("httpresponder"));
+          assertTrue(response.headers().get("httpresponder").equals("true"));
           testContext.completeNow();
         })));
   }
@@ -151,6 +168,8 @@ public class TestMainVerticle {
       .send(
         testContext.succeeding(response -> testContext.verify(() -> {
           assertTrue(response.statusCode() == 200);
+          assertTrue(response.headers().contains("httpresponder"));
+          assertTrue(response.headers().get("httpresponder").equals("true"));
           testContext.completeNow();
         })));
   }
@@ -162,6 +181,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 400);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -173,6 +194,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 404);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
@@ -184,6 +207,8 @@ public class TestMainVerticle {
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 500);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
       })));
   }
