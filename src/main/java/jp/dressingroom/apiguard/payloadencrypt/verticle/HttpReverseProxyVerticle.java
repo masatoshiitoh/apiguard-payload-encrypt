@@ -187,7 +187,6 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                       HttpServerResponse responseToRequestor = requestorContext.response();
                       if (originRequest.result().body() != null ) {
 
-                        // ヘッダをコピー
                         responseToRequestor.headers().setAll(
                           responseFromOrigin.headers().remove("content-length")
                         );
