@@ -107,21 +107,15 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
               responseToRequestor.headers().setAll(originResponse.result().headers());
 
               if (originResponse.result().body() != null) {
-                // オリジンからボディが返されてきた場合
 
-
-                // 暗号化対象バイト列の取得
                 byte[] plainResponseBody = originResponse.result().body().getBytes();
 
-                // 暗号化するぜ
                 EventBus eventBus = vertx.eventBus();
                 eventBus.request(ApiguardEventBusNames.ENCRYPT.value(), plainResponseBody, encrypt -> {
 
                   if (encrypt.succeeded()) {
-                    // 暗号化成功
                     byte[] encryptedBytes = (byte[]) encrypt.result().body();
 
-                    // ヘッダをコピー
                     responseToRequestor.headers().setAll(
                       originResponse.result().headers().remove("content-length")
                     );
