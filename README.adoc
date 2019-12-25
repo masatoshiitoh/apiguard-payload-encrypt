@@ -4,7 +4,7 @@
 
 Apiguard payload encrypt is a HTTP proxy to add following features to your web api servers.
 
-* POST Payload encryption and decryption
+* Payload encryption and decryption
 
 Now, this works with encryption method "AES/CBC/PKCS5Padding".
 
@@ -12,68 +12,49 @@ You can configure IV and pre shared key to communicate properly with your client
 
 Payload is encoded with Base64.
 
-- requirement
+== requirement
 
 Java JRE (11.0~)
 
+== Configuration
 
-== How to try
+Set following parameters via environment, or system properties.
 
-set listening port with environemt variable "payloadencrypt.server.port"
+=== payloadencrypt.server.port
 
-ex.
-[source]
-$ payloadencrypt.server.port=8888 ./gradlew run
+listening port.
 
-=== Configuration
+=== payloadencrypt.proxy.hostname
+
+proxy hostname
+
+=== payloadencrypt.proxy.port
+
+proxy port
+
+=== payloadencrypt.proxy.ua
+
+user agent string to access proxy host.
+
+=== payload.proxy.usessl
+
+is proxy server uses HTTPS.
+
+set "true" or "false".
 
 
+=== crypto.iv.base64
 
-==== IV
+Base64 encoded 128 bits(16 bytes) Initialization Vector.
 
-Base64 encoded 128 bits(16 bytes) Initialization Vector to :
-```
-crypto.key.base64
-```
 
-==== Key
+=== crypto.psk.base64
 
-Set Base64 encoded key to
-```
-crypto.iv.base64
-```
+Set Base64 encoded key.
+
 available key length:
 
 * 128 bits(16 bytes)
 * 192 bits(24 bytes)
 * 256 bits(32 bytes)
-
-
-
-  PAYLOAD_ENCRYPT_SERVER_PORT("payloadencrypt.server.port"),
-
-  PAYLOAD_ENCRYPT_PROXY_HOSTNAME("payloadencrypt.proxy.hostname"),
-  PAYLOAD_ENCRYPT_PROXY_PORT("payloadencrypt.proxy.port"),
-  PAYLOAD_ENCRYPT_PROXY_USERAGENT("payloadencrypt.proxy.ua"),
-  PAYLOAD_ENCRYPT_PROXY_USESSL("payload.proxy.usessl"),
-
-  CRYPTO_IV_BASE64("crypto.iv.base64"),
-  CRYPTO_PSK_BASE64("crypto.psk.base64"),
-
-== Build / Run with gradle
-
-To launch your tests:
-```
-$ ./gradlew clean test
-```
-
-To package your application:
-```
-$ ./gradlew clean assemble
-```
-
-To run your application:
-```
-$ ./gradlew clean run
-```
 
