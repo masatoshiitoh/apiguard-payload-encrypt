@@ -31,7 +31,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
     ConfigRetriever configRetriever = ConfigRetriever.create(vertx);
-    configRetriever.getConfig((json -> {
+    configRetriever.getConfig(json -> {
       try {
         JsonObject result = json.result();
 
@@ -68,7 +68,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
       } catch (Exception e) {
         startPromise.fail(e);
       }
-    }));
+    });
   }
 
   private RequestOptions copyFromRequest(RoutingContext routingContext) {
@@ -168,20 +168,20 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         EventBus eventBus = vertx.eventBus();
         try {
           byte[] decoded = Base64.getDecoder().decode(body.getBytes());
-          eventBus.request(ApiguardEventBusNames.DECRYPT.value(), decoded , decodeReplyHandler -> {
-            if (decodeReplyHandler.succeeded()) {
-              byte[] decrypted = (byte[])decodeReplyHandler.result().body();
+                        eventBus.request(ApiguardEventBusNames.DECRYPT.value(), decoded , decodeReplyHandler -> {
+                          if (decodeReplyHandler.succeeded()) {
+                            byte[] decrypted = (byte[])decodeReplyHandler.result().body();
 
-              client
-                .request(method, requestOptions).ssl(requestOptions.isSsl()).sendBuffer(Buffer.buffer(decrypted),
-                originRequest -> {
-                  try {
-                    if (originRequest.succeeded()) {
-                      HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                      HttpServerResponse responseToRequestor = requestorContext.response();
-                      if (originRequest.result().body() != null ) {
+                            client
+                              .request(method, requestOptions).ssl(requestOptions.isSsl()).sendBuffer(Buffer.buffer(decrypted),
+                              originRequest -> {
+                                try {
+                                  if (originRequest.succeeded()) {
+                                    HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                                    HttpServerResponse responseToRequestor = requestorContext.response();
+                                    if (originRequest.result().body() != null ) {
 
-                        responseToRequestor.headers().setAll(
+                                      responseToRequestor.headers().setAll(
                           responseFromOrigin.headers().remove("content-length")
                         );
 

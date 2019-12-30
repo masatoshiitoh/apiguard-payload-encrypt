@@ -12,7 +12,10 @@ public enum HttpStatusCodes {
   private final Integer status;
 
   static HttpStatusCodes getHttpStatusCode(Integer status) {
-    HttpStatusCodes result = Arrays.stream(HttpStatusCodes.values()).filter(s -> s.value() == status).findAny().orElse(null);
+    HttpStatusCodes result = Arrays.stream(HttpStatusCodes.values())
+      .filter(s -> s.value().equals(status))
+      .findFirst()
+      .orElse(null);
     return result;
   }
 
